@@ -23,17 +23,18 @@ struct Node
     }
 };
 
-Node * root = nullptr;
-Node * current_dir = nullptr;
+Node *root = nullptr;
+Node *current_dir = nullptr;
 
-//My Functions:
+// My Functions:
 void initialize_shell();
 void show_help();
 void command_loop();
 void create_dir(string dir_n);
 void change_dir(string dir_n);
-void print_pwd(Node * dir);
-
+void print_pwd(Node *dir);
+void display_tree(Node *dir, int level );
+void tree_command();
 int main()
 {
     initialize_shell();
@@ -50,7 +51,19 @@ void initialize_shell()
 
     root = new Node("V:\\", true, "Author");
     current_dir = root;
+}
 
+void show_help()
+{
+    cout << "Available Commands: \n";
+    cout << "  HELP     : Display this help message.\n";
+    cout << "  EXIT     : Exit the shell.\n";
+    cout << "  MKDIR    : Create a new directory. Usage: MKDIR <dirName>\n";
+    cout << "  CD       : Change directory. Usage: CD <dirName>\n";
+    cout << "  PWD      : Display the current working directory.\n";
+    cout << "  CD..     : Change to the parent directory.\n";
+    cout << "  DIR      : List contents of the current directory.\n";
+    cout << "  TREE     : Display the entire directory structure.\n";
 }
 
 void command_loop()
@@ -62,22 +75,143 @@ void command_loop()
         getline(cin, command);
 
         string cmd = command.substr(0, command.find(' '));
-        string ard = command.substr(command.find(' ') + 1);
+        string arg = command.substr(command.find(' ') + 1);
 
-        if(cmd == "HELP" || cmd == "help")
+        if (cmd == "HELP" || cmd == "help")
         {
             show_help();
         }
-        else if(cmd == "EXIT" || cmd == "exit")
+        else if (cmd == "EXIT" || cmd == "exit")
         {
             cout << "Exiting deejz shell! \n";
             break;
         }
         else if (cmd == "MKDIR" || cmd == "mkdir")
         {
-            
-
+            create_dir(arg);
+        }
+        else if (cmd == "CD" || cmd == "cd")
+        {
+            change_dir(arg);
+        }
+        else if (cmd == "PWD" || cmd == "pwd")
+        {
+            print_pwd(current_dir);
+        }
+        else if (cmd == "LS" || cmd == "ls")
+        {
+            tree_command();
+        }
+        else
+        {
+            cout << "Invalid Command. Type Help for list of Commands \n";
         }
     }
-    
+}
+
+void create_dir(string dir_n)
+{
+    if (dir_n.empty())
+    {
+        cout << "Directory name cannot be empty. \n";
+        return;
+    }
+
+    for (Node *child : current_dir->children)
+    {
+        if (child->is_dir && child->name == dir_n)
+        {
+            cout << "Directory with this name already exists. \n";
+            return;
+        }
+    }
+
+    Node *newDir = new Node(dir_n, true, "Author", current_dir);
+    current_dir->children.push_back(newDir);
+    cout << "Directory " << dir_n << " has been created Successfully. :) \n";
+}
+
+void change_dir(string dir_n)
+{
+    if (dir_n == "..")
+    {
+        if (current_dir->parent)
+        {
+            current_dir = current_dir->parent;
+            cout << "Moved to parent Directory. \n";
+        }
+        else
+        {
+            cout << "Already at the root directory. \n";
+        }
+        return;
+    }
+    else if (dir_n == "\\")
+    {
+        current_dir = root;
+        cout << "Move to root Directory. \n";
+        return;
+    }
+    for (Node *child : current_dir->children)
+    {
+        if (child->is_dir && child->name == dir_n)
+        {
+            current_dir = child;
+            cout << "Moved to directory " << dir_n << ".\n";
+            return;
+        }
+    }
+
+    cout << "Directory not found: " << dir_n << ".\n";
+}
+
+void print_pwd(Node *dir)
+{
+    if (dir == root)
+    {
+        cout << dir->name << "\n ";
+        return;
+    }
+    stack<string> pathStack;
+    while (dir != nullptr)
+    {
+        pathStack.push(dir->name);
+        dir = dir->parent;
+    }
+    while (!pathStack.empty())
+    {
+        cout << pathStack.top();
+        pathStack.pop();
+        if (!pathStack.empty())
+            cout << "\\";
+    }
+    cout << "\n";
+}
+
+void display_tree(Node *dir, int level = 0)
+{
+    for (int i = 0; i < level; i++)
+    {
+        cout << " ";
+    }
+    cout << "|-- " << dir->name;
+    if (dir->is_dir)
+    {
+        cout << " (DIR)";
+    }
+    else
+    {
+        cout << " (FILE)";
+    }
+    cout << endl;
+    for (Node *child : dir->children)
+    {
+        display_tree(child, level + 1);
+    }
+}
+
+void tree_command()
+{
+    cout << "Directory structure starting from " << current_dir->name << ":\n";
+    display_tree(current_dir);
 }
